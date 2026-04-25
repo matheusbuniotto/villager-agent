@@ -17,7 +17,9 @@ class SandboxError(RuntimeError):
 
 
 @dataclass(slots=True)
-class SandboxHappyPathResult:
+class SandboxSession:
+    """A running sandbox — container is alive and ready for exec."""
+
     run_id: str
     jira_key: str
     image: str
@@ -25,6 +27,10 @@ class SandboxHappyPathResult:
     work_branch: str
     repo_source: Path
     artifact_dir: Path
+
+
+# keep old name as alias so existing code using SandboxHappyPathResult still works
+SandboxHappyPathResult = SandboxSession
 
 
 class CommandRunner(Protocol):
@@ -48,14 +54,13 @@ class DockerSandboxManager:
         self._runs_dir = Path(runs_dir) if runs_dir is not None else Path.cwd() / "runs"
         self._image = image
 
-    def run_happy_path(
-        self, repo_source: str | Path, jira_key: str, run_id: str
-    ) -> SandboxHappyPathResult:
+    def start_sandbox(self, repo_source: str | Path, jira_key: str, run_id: str) -> SandboxSession:
+        """Start a container and clone the repo. Container stays alive — caller must call teardown_sandbox."""
         repo_path = Path(repo_source).resolve()
         if not (repo_path / ".git").is_dir():
             raise SandboxError(f"Repo source must be a git repository: {repo_path}")
 
-        result = SandboxHappyPathResult(
+        session = SandboxSession(
             run_id=run_id,
             jira_key=jira_key,
             image=self._image,
@@ -64,58 +69,58 @@ class DockerSandboxManager:
             repo_source=repo_path,
             artifact_dir=self._runs_dir / run_id / "sandbox",
         )
-        result.artifact_dir.mkdir(parents=True, exist_ok=True)
+        session.artifact_dir.mkdir(parents=True, exist_ok=True)
 
-        started = False
         try:
             self._docker_run(
                 [
-                    "docker",
-                    "run",
-                    "-d",
-                    "--name",
-                    result.container_name,
-                    "-v",
-                    f"{repo_path}:/hostrepo:ro",
+                    "docker", "run", "-d",
+                    "--name", session.container_name,
+                    "-v", f"{repo_path}:/hostrepo:ro",
                     self._image,
-                    "sh",
-                    "-lc",
-                    "mkdir -p /workspace/artifacts && sleep infinity",
+                    "sh", "-lc", "mkdir -p /workspace/artifacts && sleep infinity",
                 ]
             )
-            started = True
-
             self._docker_exec(
-                result.container_name,
+                session.container_name,
                 "git --version >/dev/null 2>&1 || (apt-get update && apt-get install -y git >/dev/null)",
             )
             self._docker_exec(
-                result.container_name,
+                session.container_name,
                 "mkdir -p /workspace && git clone /hostrepo /workspace/repo",
             )
             self._docker_exec(
-                result.container_name,
-                f"cd /workspace/repo && git checkout -b {shlex.quote(result.work_branch)}",
+                session.container_name,
+                f"cd /workspace/repo && git checkout -b {shlex.quote(session.work_branch)}",
             )
-            self._docker_exec(
-                result.container_name,
-                self._summary_artifact_command(result),
-            )
+        except subprocess.CalledProcessError as exc:
+            self._destroy_container(session.container_name)
+            raise SandboxError(self._command_failure_message(exc)) from exc
+
+        return session
+
+    def teardown_sandbox(self, session: SandboxSession) -> None:
+        """Copy artifacts out and destroy the container."""
+        try:
             self._docker_run(
-                [
-                    "docker",
-                    "cp",
-                    f"{result.container_name}:/workspace/artifacts/.",
-                    str(result.artifact_dir),
-                ]
+                ["docker", "cp", f"{session.container_name}:/workspace/artifacts/.", str(session.artifact_dir)]
             )
+        except subprocess.CalledProcessError:
+            pass  # best-effort artifact copy — always destroy
+        self._destroy_container(session.container_name)
+
+    def run_happy_path(
+        self, repo_source: str | Path, jira_key: str, run_id: str
+    ) -> SandboxSession:
+        """Start sandbox, write summary artifact, teardown. Preserves original single-shot behaviour."""
+        session = self.start_sandbox(repo_source, jira_key, run_id)
+        try:
+            self._docker_exec(session.container_name, self._summary_artifact_command(session))
         except subprocess.CalledProcessError as exc:
             raise SandboxError(self._command_failure_message(exc)) from exc
         finally:
-            if started:
-                self._destroy_container(result.container_name)
-
-        return result
+            self.teardown_sandbox(session)
+        return session
 
     def _docker_exec(self, container_name: str, shell_command: str) -> None:
         self._docker_run(["docker", "exec", container_name, "sh", "-lc", shell_command])
@@ -129,13 +134,13 @@ class DockerSandboxManager:
         except subprocess.CalledProcessError as exc:
             raise SandboxError(self._command_failure_message(exc)) from exc
 
-    def _summary_artifact_command(self, result: SandboxHappyPathResult) -> str:
+    def _summary_artifact_command(self, session: SandboxSession) -> str:
         payload = {
-            "run_id": result.run_id,
-            "jira_key": result.jira_key,
-            "image": result.image,
-            "work_branch": result.work_branch,
-            "repo_source": str(result.repo_source),
+            "run_id": session.run_id,
+            "jira_key": session.jira_key,
+            "image": session.image,
+            "work_branch": session.work_branch,
+            "repo_source": str(session.repo_source),
         }
         json_payload = json.dumps(payload, indent=2)
         return "python -c " + shlex.quote(

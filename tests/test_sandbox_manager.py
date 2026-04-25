@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from app.sandbox import DEFAULT_SANDBOX_IMAGE, DockerSandboxManager, SandboxError
+from app.sandbox import DEFAULT_SANDBOX_IMAGE, DockerSandboxManager, SandboxError, SandboxSession
 
 
 class FakeCommandRunner:
@@ -145,3 +145,43 @@ def test_summary_artifact_command_writes_json(tmp_path: Path) -> None:
 
     # Verify the artifact directory was created locally
     assert result.artifact_dir.exists()
+
+
+# --- Lifecycle tests (require Docker) ---
+
+def _docker_available() -> bool:
+    try:
+        subprocess.run(["docker", "info"], check=True, capture_output=True, timeout=5)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+
+def _container_running(name: str) -> bool:
+    result = subprocess.run(
+        ["docker", "inspect", "-f", "{{.State.Running}}", name],
+        capture_output=True, text=True,
+    )
+    return result.returncode == 0 and result.stdout.strip() == "true"
+
+
+@pytest.mark.skipif(not _docker_available(), reason="Docker not available")
+def test_start_sandbox_leaves_container_alive(tmp_path: Path) -> None:
+    # needs a real git repo — use the project itself
+    repo = Path(__file__).parent.parent
+    mgr = DockerSandboxManager(runs_dir=tmp_path / "runs")
+    session = mgr.start_sandbox(repo, jira_key="VIL-011", run_id="run-lifecycle-test")
+
+    try:
+        assert isinstance(session, SandboxSession)
+        assert _container_running(session.container_name), "container should be running after start_sandbox"
+        # executor can exec into it
+        result = subprocess.run(
+            ["docker", "exec", session.container_name, "sh", "-lc", "echo alive"],
+            capture_output=True, text=True,
+        )
+        assert "alive" in result.stdout
+    finally:
+        mgr.teardown_sandbox(session)
+
+    assert not _container_running(session.container_name), "container should be gone after teardown"

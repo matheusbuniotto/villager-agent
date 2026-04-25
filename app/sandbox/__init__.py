@@ -5,6 +5,7 @@ from app.sandbox.manager import (
     DockerSandboxManager,
     SandboxError,
     SandboxHappyPathResult,
+    SandboxSession,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "DockerSandboxManager",
     "SandboxError",
     "SandboxHappyPathResult",
+    "SandboxSession",
 ]
