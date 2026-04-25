@@ -24,7 +24,6 @@ Detailed task breakdown lives in:
 ---
 
 ## Backlog
-- VIL-010 — Implement draft PR composer
 - VIL-016 — Research agent framework: PydanticAI vs deepagents
 - VIL-011 — Replace stub executor with real agent executor
 - VIL-012 — Add retry loop
@@ -52,6 +51,7 @@ _empty_
 - VIL-008 — Implement validator skeleton
 - VIL-009 — Implement artifact writer and run folder export
 - VIL-015 — Add execution progress feedback to CLI
+- VIL-010 — Implement draft PR composer
 
 ---
 

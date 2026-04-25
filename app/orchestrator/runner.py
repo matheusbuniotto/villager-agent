@@ -9,6 +9,7 @@ import typer
 
 from app.artifact_writer import ArtifactWriter
 from app.intake import fetch_task
+from app.pr_composer import compose_pr
 from app.sandbox import DockerSandboxManager
 from app.schemas import RunRecord
 from app.spec_builder import build_spec, load_repo_profile
@@ -73,6 +74,11 @@ def run_end_to_end(
     )
     writer.write_json("run.json", record)
     writer.write_summary_md(record, task, spec)
+
+    # 6. PR draft
+    _log("PR", "composing draft PR body")
+    pr_title, pr_body = compose_pr(task, spec)
+    writer.write_text("pr.md", f"# {pr_title}\n\n{pr_body}")
 
     elapsed = perf_counter() - t0
     _log("Done", f"run folder {run_dir.name} — elapsed {elapsed:.2f}s")

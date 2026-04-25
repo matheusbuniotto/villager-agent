@@ -229,7 +229,7 @@ Runnable CLI entrypoint.
 ---
 
 ## VIL-010 - Implement draft PR composer
-**Status:** Backlog
+**Status:** Done
 **Priority:** P1
 **Milestone:** Milestone 3 - Core execution flow
 
