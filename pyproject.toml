@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "JIRA-tagged agentic SWE worker"
 readme = "README.md"
 requires-python = ">=3.12.9,<3.13"
-dependencies = []
+dependencies = [
+    "pyyaml>=6.0.3",
+]
 
 [project.optional-dependencies]
 dev = [

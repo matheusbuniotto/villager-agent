@@ -1,5 +1,49 @@
-name: example
-repo: github.com/example/repo
+repo_name: example
+team_name: platform
 language: python
-lint: ruff check .
-test: pytest
+build_system: uv
+service_type: automation
+commands:
+  install: uv sync --extra dev
+  lint: uv run ruff check .
+  format: uv run ruff format .
+  typecheck: uv run mypy app
+  test: uv run pytest -q
+paths:
+  owned:
+    - app/
+    - tests/
+    - profiles/
+  sensitive:
+    - .github/
+  forbidden:
+    - runs/
+  test_locations:
+    - tests/
+rules:
+  require_tests_for_behavior_change: true
+  block_dependency_changes_without_reason: true
+  require_human_approval_for_migrations: true
+  forbid_generated_code_edits: true
+  max_changed_files_before_warning: 8
+  max_diff_lines_before_warning: 400
+pr:
+  template: standard
+  labels:
+    - villager
+  reviewers:
+    - platform-team
+  required_sections:
+    - summary
+    - validation
+    - risks
+  draft_by_default: true
+  branch_prefix: villager/
+reviewer_groups:
+  - platform
+known_gotchas:
+  - Use uv commands instead of plain python invocations.
+environment_notes:
+  - Development tooling is installed through uv.
+agent_instructions:
+  - Keep changes scoped and validated with targeted tests.
