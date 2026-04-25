@@ -177,7 +177,7 @@ Runnable CLI entrypoint.
 ---
 
 ## VIL-007 — Implement spec builder happy path
-**Status:** Backlog  
+**Status:** Done  
 **Priority:** P1  
 **Milestone:** Milestone 3 — Core execution flow
 

@@ -24,7 +24,7 @@ Detailed task breakdown lives in:
 ---
 
 ## Backlog
-- VIL-007 — Implement spec builder happy path
+- VIL-008 — Implement validator skeleton
 - VIL-008 — Implement validator skeleton
 - VIL-009 — Implement artifact writer and run folder export
 - VIL-010 — Implement draft PR composer
@@ -50,6 +50,7 @@ _empty_
 - VIL-004 — Define and implement sandbox happy path
 - VIL-005 — Add stub orchestrator end-to-end flow
 - VIL-006 — Implement JIRA intake adapter
+- VIL-007 — Implement spec builder happy path
 - VIL-015 — Add execution progress feedback to CLI
 
 ---
