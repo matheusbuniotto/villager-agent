@@ -49,18 +49,21 @@ Recommended style:
 ---
 
 ## Agent layer
-**Primary recommendation: PydanticAI**
+**Decision (2026-04-25): deepagents**
 
-Why:
-- Python-native
-- typed outputs and tool patterns
-- good fit for structured objects like `ExecutionSpec`, `ValidationReport`
-- lighter mental model than more agent-framework-heavy options
+Evaluated: PydanticAI, deepagents (langchain-ai), smolagents (HuggingFace).
+
+Chosen deepagents because:
+- built-in coding tools: `read_file`, `write_file`, `edit_file`, `grep`, `glob`, `execute` — no need to write tool wrappers
+- `SandboxBackendProtocol` designed for agent + sandbox use case
+- dep weight (~50MB LangChain/LangGraph stack) acceptable for MVP
+
+Trade-off accepted: pulls in LangGraph as runtime. Orchestration lifecycle (retries, state transitions) stays in plain Python — deepagents owns only the executor step.
+
+Reversibility: medium cost. Executor is one module (`app/executor/`); swapping back to PydanticAI means rewriting that module and its tools.
 
 ### Use it for
-- spec generation
-- executor agent wrapper
-- optional review pass later
+- executor agent (VIL-011): reads spec, writes code changes in sandbox
 
 ### Do not use it for
 - lifecycle state machine
@@ -363,7 +366,7 @@ That is the stack.
 # 5. What we are explicitly NOT using in v1
 
 Do not use:
-- LangGraph
+- LangGraph (except as deepagents runtime — do not use LangGraph directly)
 - CrewAI
 - AutoGen
 - Temporal

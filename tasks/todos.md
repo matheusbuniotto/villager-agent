@@ -247,7 +247,7 @@ Runnable CLI entrypoint.
 ---
 
 ## VIL-016 — Research agent framework: PydanticAI vs deepagents
-**Status:** Backlog
+**Status:** Done
 **Priority:** P2
 **Milestone:** Milestone 4 — Real agent loop
 
