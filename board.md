@@ -24,7 +24,6 @@ Detailed task breakdown lives in:
 ---
 
 ## Backlog
-- VIL-004 — Define and implement sandbox happy path
 - VIL-005 — Add stub orchestrator end-to-end flow
 - VIL-006 — Implement JIRA intake adapter
 - VIL-007 — Implement spec builder happy path
@@ -49,6 +48,7 @@ Detailed task breakdown lives in:
 ## Done
 - VIL-000 — Create project scaffold
 - VIL-001 — Define core schemas in code
+- VIL-004 — Define and implement sandbox happy path
 
 ---
 
