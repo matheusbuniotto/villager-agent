@@ -4,10 +4,10 @@ Detailed local task list linked from [`../board.md`](../board.md).
 
 ---
 
-## VIL-000 — Create project scaffold
-**Status:** Done  
-**Priority:** P0  
-**Milestone:** Milestone 1 — App skeleton
+## VIL-000 - Create project scaffold
+**Status:** Done
+**Priority:** P0
+**Milestone:** Milestone 1 - App skeleton
 
 ### Why
 Create the minimum runnable structure so Villager stops being only docs and becomes a real codebase.
@@ -39,10 +39,10 @@ This is the first task to pull.
 
 ---
 
-## VIL-001 — Define core schemas in code
-**Status:** Done  
-**Priority:** P0  
-**Milestone:** Milestone 1 — App skeleton
+## VIL-001 - Define core schemas in code
+**Status:** Done
+**Priority:** P0
+**Milestone:** Milestone 1 - App skeleton
 
 ### Why
 The schemas are the backbone of the harness. Without them, modules will drift into ad hoc payloads.
@@ -70,10 +70,10 @@ Python schema module with validating models and a couple of tests.
 
 ---
 
-## VIL-002 — Add repo profile loader
-**Status:** Done  
-**Priority:** P0  
-**Milestone:** Milestone 1 — App skeleton
+## VIL-002 - Add repo profile loader
+**Status:** Done
+**Priority:** P0
+**Milestone:** Milestone 1 - App skeleton
 
 ### Why
 Repo personalization needs one real loading path early.
@@ -96,10 +96,10 @@ Working loader for `profiles/*.yaml`.
 
 ---
 
-## VIL-003 — Add CLI shell for `villager run`
-**Status:** Done  
-**Priority:** P0  
-**Milestone:** Milestone 1 — App skeleton
+## VIL-003 - Add CLI shell for `villager run`
+**Status:** Done
+**Priority:** P0
+**Milestone:** Milestone 1 - App skeleton
 
 ### Why
 The CLI is the simplest control surface for MVP execution.
@@ -122,10 +122,10 @@ Runnable CLI entrypoint.
 
 ---
 
-## VIL-004 — Define and implement sandbox happy path
-**Status:** Done  
-**Priority:** P1  
-**Milestone:** Milestone 2 — Sandbox happy path
+## VIL-004 - Define and implement sandbox happy path
+**Status:** Done
+**Priority:** P1
+**Milestone:** Milestone 2 - Sandbox happy path
 
 ### Scope
 - choose base image
@@ -141,10 +141,10 @@ Runnable CLI entrypoint.
 
 ---
 
-## VIL-005 — Add stub orchestrator end-to-end flow
-**Status:** Done  
-**Priority:** P1  
-**Milestone:** Milestone 2 — Sandbox happy path
+## VIL-005 - Add stub orchestrator end-to-end flow
+**Status:** Done
+**Priority:** P1
+**Milestone:** Milestone 2 - Sandbox happy path
 
 ### Scope
 - call intake stub
@@ -160,10 +160,10 @@ Runnable CLI entrypoint.
 
 ---
 
-## VIL-006 — Implement JIRA intake adapter
-**Status:** Done  
-**Priority:** P1  
-**Milestone:** Milestone 3 — Core execution flow
+## VIL-006 - Implement JIRA intake adapter
+**Status:** Done
+**Priority:** P1
+**Milestone:** Milestone 3 - Core execution flow
 
 ### Scope
 - fetch issue via API
@@ -176,10 +176,10 @@ Runnable CLI entrypoint.
 
 ---
 
-## VIL-007 — Implement spec builder happy path
-**Status:** Done  
-**Priority:** P1  
-**Milestone:** Milestone 3 — Core execution flow
+## VIL-007 - Implement spec builder happy path
+**Status:** Done
+**Priority:** P1
+**Milestone:** Milestone 3 - Core execution flow
 
 ### Scope
 - classify task type
@@ -194,10 +194,10 @@ Runnable CLI entrypoint.
 
 ---
 
-## VIL-008 — Implement validator skeleton
-**Status:** Backlog  
-**Priority:** P1  
-**Milestone:** Milestone 3 — Core execution flow
+## VIL-008 - Implement validator skeleton
+**Status:** Backlog
+**Priority:** P1
+**Milestone:** Milestone 3 - Core execution flow
 
 ### Scope
 - path policy check
@@ -211,10 +211,10 @@ Runnable CLI entrypoint.
 
 ---
 
-## VIL-009 — Implement artifact writer and run folder export
-**Status:** Backlog  
-**Priority:** P1  
-**Milestone:** Milestone 3 — Core execution flow
+## VIL-009 - Implement artifact writer and run folder export
+**Status:** Backlog
+**Priority:** P1
+**Milestone:** Milestone 3 - Core execution flow
 
 ### Scope
 - create `runs/<run_id>/`
@@ -228,10 +228,10 @@ Runnable CLI entrypoint.
 
 ---
 
-## VIL-010 — Implement draft PR composer
-**Status:** Backlog  
-**Priority:** P1  
-**Milestone:** Milestone 3 — Core execution flow
+## VIL-010 - Implement draft PR composer
+**Status:** Backlog
+**Priority:** P1
+**Milestone:** Milestone 3 - Core execution flow
 
 ### Scope
 - generate PR title/body
@@ -246,9 +246,40 @@ Runnable CLI entrypoint.
 
 ---
 
+## VIL-016 — Research agent framework: PydanticAI vs deepagents
+**Status:** Backlog
+**Priority:** P2
+**Milestone:** Milestone 4 — Real agent loop
+
+### Why
+VIL-011 requires choosing an agent framework. PydanticAI was the original pick, but deepagents (LangChain) may offer better long-term ecosystem, memory, and multi-step reasoning. We should compare both before committing.
+
+### Scope
+- Read deepagents README / docs
+- Compare against PydanticAI on:
+  - typed output / structured result support
+  - tool use patterns
+  - sandbox file system interaction
+  - testability and debugging
+  - dependency weight
+- Document decision with tradeoffs
+
+### Deliverable
+One-paragraph decision note in codebase or docs.
+
+### Done when
+- Both frameworks reviewed
+- Decision recorded
+- VIL-011 can proceed with chosen framework
+
+### Dependencies
+- none (research task)
+
+---
+
 ## VIL-011 — Replace stub executor with real agent executor
-**Status:** Backlog  
-**Priority:** P2  
+**Status:** Backlog
+**Priority:** P2
 **Milestone:** Milestone 4 — Real agent loop
 
 ### Scope
@@ -264,10 +295,10 @@ Runnable CLI entrypoint.
 
 ---
 
-## VIL-012 — Add retry loop
-**Status:** Backlog  
-**Priority:** P2  
-**Milestone:** Milestone 4 — Real agent loop
+## VIL-012 - Add retry loop
+**Status:** Backlog
+**Priority:** P2
+**Milestone:** Milestone 4 - Real agent loop
 
 ### Scope
 - track retry count
@@ -281,10 +312,10 @@ Runnable CLI entrypoint.
 
 ---
 
-## VIL-013 — Add Postgres state store
-**Status:** Backlog  
-**Priority:** P2  
-**Milestone:** Milestone 5 — Persistence and external integration
+## VIL-013 - Add Postgres state store
+**Status:** Backlog
+**Priority:** P2
+**Milestone:** Milestone 5 - Persistence and external integration
 
 ### Scope
 - persist run records
@@ -297,10 +328,10 @@ Runnable CLI entrypoint.
 
 ---
 
-## VIL-014 — Add real Git provider integration
-**Status:** Backlog  
-**Priority:** P2  
-**Milestone:** Milestone 5 — Persistence and external integration
+## VIL-014 - Add real Git provider integration
+**Status:** Backlog
+**Priority:** P2
+**Milestone:** Milestone 5 - Persistence and external integration
 
 ### Scope
 - create draft PR through API
@@ -312,10 +343,10 @@ Runnable CLI entrypoint.
 
 ---
 
-## VIL-015 — Add execution progress feedback to CLI
+## VIL-015 - Add execution progress feedback to CLI
 **Status:** Done
 **Priority:** P1
-**Milestone:** Milestone 2 — Sandbox happy path
+**Milestone:** Milestone 2 - Sandbox happy path
 
 ### Why
 `villager run` hangs silently during Docker sandbox. User thinks it's frozen.
@@ -323,7 +354,7 @@ Runnable CLI entrypoint.
 ### Scope
 - Add step-by-step `typer.secho()` output with elapsed time in orchestrator
 - Show phase start/end: intake, profile load, spec build, sandbox, artifacts
-- Keep it simple — no structured logging framework yet
+- Keep it simple - no structured logging framework yet
 
 ### Deliverable
 CLI that prints each phase with timestamps.
