@@ -41,13 +41,14 @@ Detailed task breakdown lives in:
 - VIL-003 — Add CLI shell for `villager run`
 
 ## In Progress
-- VIL-001 — Define core schemas in code
+- _empty_
 
 ## Blocked
 - _empty_
 
 ## Done
 - VIL-000 — Create project scaffold
+- VIL-001 — Define core schemas in code
 
 ---
 

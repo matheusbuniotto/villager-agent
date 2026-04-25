@@ -40,7 +40,7 @@ This is the first task to pull.
 ---
 
 ## VIL-001 — Define core schemas in code
-**Status:** In Progress  
+**Status:** Done  
 **Priority:** P0  
 **Milestone:** Milestone 1 — App skeleton
 
