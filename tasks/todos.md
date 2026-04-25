@@ -195,7 +195,7 @@ Runnable CLI entrypoint.
 ---
 
 ## VIL-008 - Implement validator skeleton
-**Status:** Backlog
+**Status:** Done
 **Priority:** P1
 **Milestone:** Milestone 3 - Core execution flow
 
