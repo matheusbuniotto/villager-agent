@@ -71,7 +71,7 @@ Python schema module with validating models and a couple of tests.
 ---
 
 ## VIL-002 — Add repo profile loader
-**Status:** Ready  
+**Status:** Done  
 **Priority:** P0  
 **Milestone:** Milestone 1 — App skeleton
 
@@ -97,7 +97,7 @@ Working loader for `profiles/*.yaml`.
 ---
 
 ## VIL-003 — Add CLI shell for `villager run`
-**Status:** Ready  
+**Status:** Done  
 **Priority:** P0  
 **Milestone:** Milestone 1 — App skeleton
 

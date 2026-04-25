@@ -36,8 +36,7 @@ Detailed task breakdown lives in:
 - VIL-014 — Add real Git provider integration
 
 ## Ready
-- VIL-002 — Add repo profile loader
-- VIL-003 — Add CLI shell for `villager run`
+_empty_
 
 ## In Progress
 - _empty_
@@ -48,6 +47,8 @@ Detailed task breakdown lives in:
 ## Done
 - VIL-000 — Create project scaffold
 - VIL-001 — Define core schemas in code
+- VIL-002 — Add repo profile loader
+- VIL-003 — Add CLI shell for `villager run`
 - VIL-004 — Define and implement sandbox happy path
 
 ---
