@@ -212,7 +212,7 @@ Runnable CLI entrypoint.
 ---
 
 ## VIL-009 - Implement artifact writer and run folder export
-**Status:** Backlog
+**Status:** Done
 **Priority:** P1
 **Milestone:** Milestone 3 - Core execution flow
 
