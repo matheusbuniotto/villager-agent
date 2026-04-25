@@ -1,18 +1,24 @@
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
 
 import typer
+from dotenv import load_dotenv
 
 from app.artifact_writer import ArtifactWriter
+from app.executor.agent import run_executor
+from app.executor.model import load_model
 from app.intake import fetch_task
 from app.pr_composer import compose_pr
 from app.sandbox import DockerSandboxManager
 from app.schemas import RunRecord
 from app.spec_builder import build_spec, load_repo_profile
+
+load_dotenv()
 
 
 def _log(phase: str, detail: str = "") -> None:
@@ -52,14 +58,25 @@ def run_end_to_end(
     spec = build_spec(task, profile)
     writer.write_json("spec.json", spec)
 
-    # 4. Sandbox
+    # 4. Sandbox — start, execute, teardown
     _log("Sandbox", "starting container and cloning repo")
     repo_source = Path.cwd()
     sandbox_mgr = DockerSandboxManager(runs_dir=run_dir)
-    _sandbox_result = sandbox_mgr.run_happy_path(repo_source, jira_key=jira_key, run_id=run_id)
-    _log("Sandbox", "complete — artifacts copied")
+    session = sandbox_mgr.start_sandbox(repo_source, jira_key=jira_key, run_id=run_id)
+    _log("Sandbox", f"container {session.container_name} ready")
 
-    # 5. Run record + summary
+    try:
+        # 5. Executor
+        _log("Executor", "loading model and running agent")
+        model = load_model()
+        executor_result = run_executor(spec, profile, session.container_name, model)
+        _log("Executor", f"done — {len(executor_result.changed_files)} file(s) changed")
+        writer.write_text("executor-summary.txt", executor_result.summary)
+    finally:
+        _log("Sandbox", "tearing down container")
+        sandbox_mgr.teardown_sandbox(session)
+
+    # 7. Run record + summary
     _log("Artifacts", "writing run record and summary")
     record = RunRecord(
         run_id=run_id,
@@ -75,7 +92,7 @@ def run_end_to_end(
     writer.write_json("run.json", record)
     writer.write_summary_md(record, task, spec)
 
-    # 6. PR draft
+    # 8. PR draft
     _log("PR", "composing draft PR body")
     pr_title, pr_body = compose_pr(task, spec)
     writer.write_text("pr.md", f"# {pr_title}\n\n{pr_body}")
