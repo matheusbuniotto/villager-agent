@@ -109,6 +109,30 @@ class TestNormalizer:
         packet = normalize_issue(issue)
         assert packet.repo == "example"
 
+    def test_extract_repo_from_github_url(self) -> None:
+        issue = {
+            "key": "VIL-006",
+            "fields": {
+                "summary": "Test",
+                "description": "See https://github.com/acme/billing-service for context.",
+            },
+        }
+
+        packet = normalize_issue(issue)
+        assert packet.repo == "billing-service"
+
+    def test_extract_repo_from_github_url_with_git_suffix(self) -> None:
+        issue = {
+            "key": "VIL-006",
+            "fields": {
+                "summary": "Test",
+                "description": "Clone git@github.com:acme/payments.git",
+            },
+        }
+
+        packet = normalize_issue(issue)
+        assert packet.repo == "payments"
+
     def test_extract_acceptance_criteria(self) -> None:
         issue = {
             "key": "VIL-006",

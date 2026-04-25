@@ -36,12 +36,21 @@ def _plain_description(description: Any) -> str:
     return ""
 
 
+_GITHUB_URL_RE = re.compile(r"github\.com[/:](?:[^/\s]+/)?([^/\s]+)")
+
+
 def _extract_repo(description_text: str) -> str | None:
-    """Look for 'Repo: <name>' or 'Repository: <name>' in description."""
+    """Look for 'Repo: <name>', 'Repository: <name>', or github.com URL in description."""
     for pattern in (r"Repo:\s*(\S+)", r"Repository:\s*(\S+)"):
         match = re.search(pattern, description_text, re.IGNORECASE)
         if match:
             return match.group(1)
+
+    url_match = _GITHUB_URL_RE.search(description_text)
+    if url_match:
+        repo = url_match.group(1)
+        return repo.removesuffix(".git")
+
     return None
 
 
