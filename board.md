@@ -24,7 +24,6 @@ Detailed task breakdown lives in:
 ---
 
 ## Backlog
-- VIL-011 — Replace stub executor with real agent executor
 - VIL-012 — Add retry loop
 - VIL-013 — Add Postgres state store
 - VIL-014 — Add real Git provider integration
@@ -52,6 +51,7 @@ _empty_
 - VIL-015 — Add execution progress feedback to CLI
 - VIL-010 — Implement draft PR composer
 - VIL-016 — Research agent framework: PydanticAI vs deepagents
+- VIL-011 — Replace stub executor with real agent executor
 
 ---
 

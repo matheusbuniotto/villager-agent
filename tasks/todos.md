@@ -278,7 +278,7 @@ One-paragraph decision note in codebase or docs.
 ---
 
 ## VIL-011 — Replace stub executor with real agent executor
-**Status:** Backlog
+**Status:** Done
 **Priority:** P2
 **Milestone:** Milestone 4 — Real agent loop
 
