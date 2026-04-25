@@ -1,0 +1,5 @@
+name: example
+repo: github.com/example/repo
+language: python
+lint: ruff check .
+test: pytest

@@ -1,0 +1,1 @@
+"""Villager application package."""

@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pi-lens/
+*.egg-info/
+.env
+*.pyc
+.DS_Store
+runs/*
+!runs/.gitkeep
