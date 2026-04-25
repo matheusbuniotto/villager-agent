@@ -161,7 +161,7 @@ Runnable CLI entrypoint.
 ---
 
 ## VIL-006 — Implement JIRA intake adapter
-**Status:** Backlog  
+**Status:** Done  
 **Priority:** P1  
 **Milestone:** Milestone 3 — Core execution flow
 

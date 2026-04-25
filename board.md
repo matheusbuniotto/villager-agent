@@ -23,9 +23,7 @@ Detailed task breakdown lives in:
 
 ---
 
-## In Progress
-_empty_
-- VIL-006 — Implement JIRA intake adapter
+## Backlog
 - VIL-007 — Implement spec builder happy path
 - VIL-008 — Implement validator skeleton
 - VIL-009 — Implement artifact writer and run folder export
@@ -39,10 +37,10 @@ _empty_
 _empty_
 
 ## In Progress
-- _empty_
+_empty_
 
 ## Blocked
-- _empty_
+_empty_
 
 ## Done
 - VIL-000 — Create project scaffold
@@ -51,6 +49,7 @@ _empty_
 - VIL-003 — Add CLI shell for `villager run`
 - VIL-004 — Define and implement sandbox happy path
 - VIL-005 — Add stub orchestrator end-to-end flow
+- VIL-006 — Implement JIRA intake adapter
 - VIL-015 — Add execution progress feedback to CLI
 
 ---
