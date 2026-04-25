@@ -296,7 +296,7 @@ One-paragraph decision note in codebase or docs.
 ---
 
 ## VIL-012 - Add retry loop
-**Status:** Backlog
+**Status:** Done
 **Priority:** P2
 **Milestone:** Milestone 4 - Real agent loop
 

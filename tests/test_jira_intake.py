@@ -163,6 +163,33 @@ class TestNormalizer:
         packet = normalize_issue(issue)
         assert packet.acceptance_criteria == ["First thing", "Second thing"]
 
+    def test_extract_repo_from_adf_inline_card(self) -> None:
+        issue = {
+            "key": "VIL-006",
+            "fields": {
+                "summary": "Test",
+                "description": {
+                    "type": "doc",
+                    "version": 1,
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {"type": "text", "text": "Repo: "},
+                                {
+                                    "type": "inlineCard",
+                                    "attrs": {"url": "https://github.com/acme/my-service"},
+                                },
+                            ],
+                        }
+                    ],
+                },
+            },
+        }
+
+        packet = normalize_issue(issue)
+        assert packet.repo == "my-service"
+
     def test_normalize_adf_description(self) -> None:
         issue = {
             "key": "VIL-006",

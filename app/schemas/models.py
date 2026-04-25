@@ -122,6 +122,8 @@ class RepoProfile:
     known_gotchas: list[str] = field(default_factory=list)
     environment_notes: list[str] = field(default_factory=list)
     agent_instructions: list[str] = field(default_factory=list)
+    repo_url: str | None = None
+    sandbox_image: str | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "RepoProfile":
@@ -142,6 +144,8 @@ class RepoProfile:
             known_gotchas=data.get("known_gotchas", []),
             environment_notes=data.get("environment_notes", []),
             agent_instructions=data.get("agent_instructions", []),
+            repo_url=data.get("repo_url"),
+            sandbox_image=data.get("sandbox_image"),
         )
 
 

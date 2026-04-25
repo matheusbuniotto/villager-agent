@@ -51,9 +51,6 @@ def assess_ambiguity(task: TaskPacket) -> tuple[bool, list[str]]:
     """Return (is_ambiguous, list_of_flags)."""
     flags: list[str] = []
 
-    if not task.acceptance_criteria:
-        flags.append("no_acceptance_criteria")
-
     if len(task.description.strip()) < 30:
         flags.append("description_too_short")
 
@@ -104,6 +101,19 @@ def _suggested_plan(task_type: TaskType) -> list[str]:
     return base
 
 
+def _synthesize_acceptance_criteria(task: TaskPacket, task_type: TaskType) -> list[str]:
+    """Generate minimal ACs from description when the task has none."""
+    base = [f"Implement: {task.title}"]
+    if task_type == "bug":
+        base.append("Bug no longer reproduces")
+    elif task_type == "feature":
+        base.append("New behavior is covered by at least one test")
+    elif task_type == "refactor":
+        base.append("No change in external behavior; existing tests pass")
+    base.append("Lint and tests pass")
+    return base
+
+
 def build_spec(task: TaskPacket, profile: RepoProfile) -> ExecutionSpec:
     """Build an ExecutionSpec from a TaskPacket and RepoProfile.
 
@@ -131,6 +141,8 @@ def build_spec(task: TaskPacket, profile: RepoProfile) -> ExecutionSpec:
             "Add acceptance criteria or clarify description before proceeding."
         )
 
+    acceptance_criteria = task.acceptance_criteria or _synthesize_acceptance_criteria(task, task_type)
+
     return ExecutionSpec(
         spec_id=f"spec-{task.task_id}",
         task_id=task.task_id,
@@ -138,7 +150,7 @@ def build_spec(task: TaskPacket, profile: RepoProfile) -> ExecutionSpec:
         scope_in=[profile.language, profile.build_system, task_type],
         scope_out=["infrastructure", "unrelated services", "production deployment"],
         target_areas=_infer_target_areas(task, profile),
-        acceptance_criteria=task.acceptance_criteria,
+        acceptance_criteria=acceptance_criteria,
         validation_steps=[profile.commands.test, profile.commands.lint],
         artifacts_required=["validation_report", "draft_pr_body"],
         stop_conditions=_stop_conditions(task_type, profile),

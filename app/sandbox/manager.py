@@ -54,11 +54,20 @@ class DockerSandboxManager:
         self._runs_dir = Path(runs_dir) if runs_dir is not None else Path.cwd() / "runs"
         self._image = image
 
-    def start_sandbox(self, repo_source: str | Path, jira_key: str, run_id: str) -> SandboxSession:
-        """Start a container and clone the repo. Container stays alive — caller must call teardown_sandbox."""
+    def start_sandbox(
+        self,
+        repo_source: str | Path,
+        jira_key: str,
+        run_id: str,
+        repo_url: str | None = None,
+        github_pat: str | None = None,
+    ) -> SandboxSession:
+        """Start a container and clone the repo. Container stays alive — caller must call teardown_sandbox.
+
+        If repo_url is given, clones from the remote URL (using github_pat if provided).
+        Otherwise mounts repo_source as a local volume and clones from /hostrepo.
+        """
         repo_path = Path(repo_source).resolve()
-        if not (repo_path / ".git").is_dir():
-            raise SandboxError(f"Repo source must be a git repository: {repo_path}")
 
         session = SandboxSession(
             run_id=run_id,
@@ -72,23 +81,46 @@ class DockerSandboxManager:
         session.artifact_dir.mkdir(parents=True, exist_ok=True)
 
         try:
-            self._docker_run(
-                [
+            docker_run_cmd: list[str]
+            if repo_url:
+                docker_run_cmd = [
+                    "docker", "run", "-d",
+                    "--name", session.container_name,
+                    self._image,
+                    "sh", "-lc", "mkdir -p /workspace/artifacts && sleep infinity",
+                ]
+            else:
+                if not (repo_path / ".git").is_dir():
+                    raise SandboxError(f"Repo source must be a git repository: {repo_path}")
+                docker_run_cmd = [
                     "docker", "run", "-d",
                     "--name", session.container_name,
                     "-v", f"{repo_path}:/hostrepo:ro",
                     self._image,
                     "sh", "-lc", "mkdir -p /workspace/artifacts && sleep infinity",
                 ]
-            )
+
+            self._docker_run(docker_run_cmd)
             self._docker_exec(
                 session.container_name,
                 "git --version >/dev/null 2>&1 || (apt-get update && apt-get install -y git >/dev/null)",
             )
-            self._docker_exec(
-                session.container_name,
-                "mkdir -p /workspace && git clone /hostrepo /workspace/repo",
-            )
+
+            if repo_url:
+                # Inject PAT into URL for private repos: https://pat@github.com/org/repo
+                clone_url = repo_url
+                if github_pat and "github.com" in repo_url:
+                    clone_url = repo_url.replace("https://", f"https://{github_pat}@")
+                self._docker_exec(
+                    session.container_name,
+                    f"mkdir -p /workspace && git clone {shlex.quote(clone_url)} /workspace/repo",
+                )
+            else:
+                self._docker_exec(
+                    session.container_name,
+                    "mkdir -p /workspace && git clone /hostrepo /workspace/repo",
+                )
+
             self._docker_exec(
                 session.container_name,
                 f"cd /workspace/repo && git checkout -b {shlex.quote(session.work_branch)}",

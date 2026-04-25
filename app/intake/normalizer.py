@@ -18,11 +18,17 @@ def _extract_text_from_adf(node: Any) -> str:
     for child in content:
         text_parts.append(_extract_text_from_adf(child))
 
-    if node.get("type") == "text":
+    node_type = node.get("type")
+    if node_type == "text":
         text = node.get("text", "")
         if node.get("marks"):
             text = f"*{text}*"
         text_parts.append(text)
+    elif node_type == "inlineCard":
+        # JIRA smart-links: attrs.url contains the linked URL
+        url = node.get("attrs", {}).get("url", "")
+        if url:
+            text_parts.append(url)
 
     return "\n".join(part for part in text_parts if part)
 
@@ -44,7 +50,9 @@ def _extract_repo(description_text: str) -> str | None:
     for pattern in (r"Repo:\s*(\S+)", r"Repository:\s*(\S+)"):
         match = re.search(pattern, description_text, re.IGNORECASE)
         if match:
-            return match.group(1)
+            value = match.group(1)
+            if not value.startswith(("http://", "https://", "git@")):
+                return value
 
     url_match = _GITHUB_URL_RE.search(description_text)
     if url_match:

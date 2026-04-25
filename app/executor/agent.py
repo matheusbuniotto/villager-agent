@@ -54,6 +54,7 @@ def run_executor(
     profile: RepoProfile,
     container_name: str,
     model: BaseChatModel,
+    instruction: str | None = None,
 ) -> ExecutorResult:
     """Run the deepagents executor against a live Docker container."""
     backend = DockerExecBackend(container_name, workdir=WORKDIR)
@@ -65,7 +66,15 @@ def run_executor(
         system_prompt=system_prompt,
     )
 
-    result = agent.invoke({"messages": [{"role": "user", "content": spec.problem_statement}]})
+    user_prompt = spec.problem_statement
+    if instruction:
+        user_prompt = (
+            f"{spec.problem_statement}\n\n"
+            "Address the validation issues from the previous attempt before you stop.\n\n"
+            f"{instruction}"
+        )
+
+    result = agent.invoke({"messages": [{"role": "user", "content": user_prompt}]})
 
     # extract summary from the last assistant message
     messages = result.get("messages", [])

@@ -24,7 +24,6 @@ Detailed task breakdown lives in:
 ---
 
 ## Backlog
-- VIL-012 — Add retry loop
 - VIL-013 — Add Postgres state store
 - VIL-014 — Add real Git provider integration
 
@@ -38,6 +37,7 @@ _empty_
 _empty_
 
 ## Done
+- VIL-012 — Add retry loop
 - VIL-000 — Create project scaffold
 - VIL-001 — Define core schemas in code
 - VIL-002 — Add repo profile loader

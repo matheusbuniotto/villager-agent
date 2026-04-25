@@ -78,11 +78,15 @@ class TestAssessAmbiguity:
         assert not is_ambiguous
         assert not flags
 
-    def test_missing_acceptance_criteria(self) -> None:
-        task = _make_task("Fix bug", acceptance_criteria=[])
+    def test_missing_acceptance_criteria_is_not_a_blocker(self) -> None:
+        task = _make_task(
+            "Add login timeout feature",
+            description="Sessions should expire after 30 minutes of inactivity.",
+            acceptance_criteria=[],
+        )
         is_ambiguous, flags = assess_ambiguity(task)
-        assert is_ambiguous
-        assert "no_acceptance_criteria" in flags
+        assert not is_ambiguous
+        assert "no_acceptance_criteria" not in flags
 
     def test_short_description(self) -> None:
         task = _make_task("Fix bug", description="Fix it.", acceptance_criteria=["Works"])
