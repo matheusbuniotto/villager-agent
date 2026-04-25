@@ -312,6 +312,31 @@ Runnable CLI entrypoint.
 
 ---
 
+## VIL-015 — Add execution progress feedback to CLI
+**Status:** Done
+**Priority:** P1
+**Milestone:** Milestone 2 — Sandbox happy path
+
+### Why
+`villager run` hangs silently during Docker sandbox. User thinks it's frozen.
+
+### Scope
+- Add step-by-step `typer.secho()` output with elapsed time in orchestrator
+- Show phase start/end: intake, profile load, spec build, sandbox, artifacts
+- Keep it simple — no structured logging framework yet
+
+### Deliverable
+CLI that prints each phase with timestamps.
+
+### Done when
+- `villager run` prints each phase name and elapsed time
+- Output is readable and not noisy
+
+### Dependencies
+- VIL-005
+
+---
+
 ## Pull recommendation
 Pull in this order:
 1. VIL-000
