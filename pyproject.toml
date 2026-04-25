@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12.9,<3.13"
 dependencies = [
     "pyyaml>=6.0.3",
+    "typer>=0.24.2",
 ]
 
 [project.optional-dependencies]
