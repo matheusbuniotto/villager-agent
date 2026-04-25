@@ -142,7 +142,7 @@ Runnable CLI entrypoint.
 ---
 
 ## VIL-005 — Add stub orchestrator end-to-end flow
-**Status:** Backlog  
+**Status:** Done  
 **Priority:** P1  
 **Milestone:** Milestone 2 — Sandbox happy path
 
