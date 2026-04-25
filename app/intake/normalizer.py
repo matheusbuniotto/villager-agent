@@ -36,7 +36,7 @@ def _plain_description(description: Any) -> str:
     return ""
 
 
-_GITHUB_URL_RE = re.compile(r"github\.com[/:](?:[^/\s]+/)?([^/\s]+)")
+_GITHUB_URL_RE = re.compile(r"github\.com[/:](?:[^/\s]+/)?([^/\s|]+)")
 
 
 def _extract_repo(description_text: str) -> str | None:

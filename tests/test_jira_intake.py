@@ -133,6 +133,18 @@ class TestNormalizer:
         packet = normalize_issue(issue)
         assert packet.repo == "payments"
 
+    def test_extract_repo_from_jira_smart_link(self) -> None:
+        issue = {
+            "key": "VIL-006",
+            "fields": {
+                "summary": "Test",
+                "description": "repo [https://github.com/acme/billing|https://github.com/acme/billing|smart-link]",
+            },
+        }
+
+        packet = normalize_issue(issue)
+        assert packet.repo == "billing"
+
     def test_extract_acceptance_criteria(self) -> None:
         issue = {
             "key": "VIL-006",
