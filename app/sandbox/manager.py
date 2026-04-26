@@ -67,14 +67,18 @@ class DockerSandboxManager:
             raise SandboxError("`docker` CLI not found on PATH. Install Docker Desktop or colima.") from exc
 
     def _check_image_available(self, image: str) -> None:
+        # Only enforce local presence for images that can't be pulled from a registry.
+        # Standard images (e.g. golang:*, python:*) are auto-pulled by docker run.
+        # Local-only images (those without a registry host and not on Docker Hub naming)
+        # are identified by a "villager" prefix convention.
+        if "villager" not in image:
+            return
         try:
             self._docker_run(["docker", "image", "inspect", image])
         except subprocess.CalledProcessError:
-            build_hint = ""
-            if "villager" in image:
-                build_hint = f" Build it with: docker build -t {image} docker/villager-base"
             raise SandboxError(
-                f"Sandbox image '{image}' not found locally.{build_hint}"
+                f"Sandbox image '{image}' not found locally. "
+                f"Build it with: docker build -t {image} docker/villager-base"
             )
 
     def start_sandbox(

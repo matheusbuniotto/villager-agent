@@ -45,6 +45,7 @@ def _build_system_prompt(spec: ExecutionSpec, profile: RepoProfile) -> str:
     ac_lines = "\n".join(f"- {ac}" for ac in spec.acceptance_criteria)
     scope_in = ", ".join(spec.scope_in)
     notes = "\n".join(f"- {n}" for n in spec.implementation_notes) or "- none"
+    gotchas = "\n".join(f"- {g}" for g in profile.known_gotchas) or "- none"
     return f"""\
 You are a coding agent working inside a Docker sandbox at {WORKDIR}.
 
@@ -65,6 +66,17 @@ Lint command: {profile.commands.lint}
 
 ## Implementation notes
 {notes}
+
+## Known gotchas
+{gotchas}
+
+## Working rules — follow these to stay efficient
+- Use grep or glob to locate relevant files before reading them. Never read files speculatively.
+- Read only files you are about to modify or that are directly needed to understand the change.
+- Do not run broad discovery commands (find ., ls -R, cat entire directories).
+- Prefer targeted reads with an offset/limit over reading full files.
+- Run tests and lint only once at the end, not after every small change.
+- Stop as soon as the acceptance criteria are met. Do not refactor unrelated code.
 
 Work only within {WORKDIR}. When finished, summarize what you changed.
 """

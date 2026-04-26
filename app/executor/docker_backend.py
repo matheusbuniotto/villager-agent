@@ -12,6 +12,10 @@ from deepagents.backends.protocol import (
 from deepagents.backends.sandbox import BaseSandbox
 
 
+_MAX_OUTPUT_CHARS = 8_000
+_TRUNCATION_NOTICE = "\n\n[Output truncated to 8000 chars. Use grep/read with offset to see more.]"
+
+
 class DockerExecBackend(BaseSandbox):
     """deepagents BaseSandbox backed by a running Docker container.
 
@@ -35,6 +39,8 @@ class DockerExecBackend(BaseSandbox):
             timeout=timeout or 120,
         )
         output = (result.stdout + result.stderr).strip()
+        if len(output) > _MAX_OUTPUT_CHARS:
+            output = output[:_MAX_OUTPUT_CHARS] + _TRUNCATION_NOTICE
         return ExecuteResponse(output=output, exit_code=result.returncode)
 
     def upload_files(self, files: list[tuple[str, bytes]]) -> list[FileUploadResponse]:

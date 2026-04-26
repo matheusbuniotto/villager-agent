@@ -55,11 +55,12 @@ def test_happy_path_builds_result_and_runs_docker_commands(tmp_path: Path) -> No
     assert result.repo_source == repo
     assert result.artifact_dir.exists()
 
-    # Should issue: docker info, docker image inspect, docker run, exec (git install),
-    # exec (clone), exec (checkout), exec (artifact), docker cp, docker rm -f
-    assert len(runner.commands) == 9
+    # Should issue: docker info, docker run, exec (git install), exec (clone),
+    # exec (checkout), exec (artifact), docker cp, docker rm -f
+    # (no docker image inspect — skipped for non-villager images that can be auto-pulled)
+    assert len(runner.commands) == 8
     assert runner.commands[0][0:2] == ["docker", "info"]
-    assert runner.commands[2][0:2] == ["docker", "run"]
+    assert runner.commands[1][0:2] == ["docker", "run"]
     assert runner.commands[-2][0:2] == ["docker", "cp"]
     assert runner.commands[-1] == ["docker", "rm", "-f", "villager-run-abc"]
 
@@ -99,7 +100,7 @@ def test_container_destroyed_even_on_failure(tmp_path: Path) -> None:
     def counting_run(command: list[str]) -> subprocess.CompletedProcess[str]:
         nonlocal call_count
         call_count += 1
-        if call_count == 5:  # fail on the fifth command (clone exec, after docker info/image inspect/run/git-install)
+        if call_count == 4:  # fail on the fourth command (clone exec, after docker info/run/git-install)
             raise subprocess.CalledProcessError(
                 returncode=1,
                 cmd=command,
@@ -181,6 +182,7 @@ def test_docker_cli_not_found_raises_clear_error(tmp_path: Path) -> None:
 
 
 def test_missing_image_raises_clear_error(tmp_path: Path) -> None:
+    # Only villager-prefixed images are checked locally (public images are auto-pulled by docker run)
     repo = _make_git_repo(tmp_path)
 
     class ImageMissingRunner:
@@ -191,7 +193,7 @@ def test_missing_image_raises_clear_error(tmp_path: Path) -> None:
                 )
             return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
 
-    mgr = DockerSandboxManager(runner=ImageMissingRunner(), runs_dir=tmp_path / "runs")
+    mgr = DockerSandboxManager(runner=ImageMissingRunner(), image="villager-base:latest", runs_dir=tmp_path / "runs")
     with pytest.raises(SandboxError, match="not found locally"):
         mgr.start_sandbox(repo, jira_key="VIL-001", run_id="run-1")
 
