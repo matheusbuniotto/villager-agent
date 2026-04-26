@@ -42,24 +42,33 @@ def _plain_description(description: Any) -> str:
     return ""
 
 
-_GITHUB_URL_RE = re.compile(r"github\.com[/:](?:[^/\s]+/)?([^/\s|]+)")
+_GITHUB_URL_RE = re.compile(r"(https?://github\.com/[^\s|]+|git@github\.com:[^\s|]+)")
 
 
-def _extract_repo(description_text: str) -> str | None:
-    """Look for 'Repo: <name>', 'Repository: <name>', or github.com URL in description."""
+def _extract_repo(description_text: str) -> tuple[str | None, str | None]:
+    """Return (repo_name, repo_url) parsed from the description.
+
+    Checks for explicit 'Repo: <name>' labels first, then falls back to any
+    GitHub URL in the text.  repo_url is only set when a full URL is found.
+    """
     for pattern in (r"Repo:\s*(\S+)", r"Repository:\s*(\S+)"):
         match = re.search(pattern, description_text, re.IGNORECASE)
         if match:
             value = match.group(1)
             if not value.startswith(("http://", "https://", "git@")):
-                return value
+                return value, None
 
     url_match = _GITHUB_URL_RE.search(description_text)
     if url_match:
-        repo = url_match.group(1)
-        return repo.removesuffix(".git")
+        raw_url = url_match.group(1).rstrip(".,)")
+        repo_name = raw_url.rstrip("/").split("/")[-1].removesuffix(".git")
+        if raw_url.startswith("git@github.com:"):
+            raw_url = raw_url.replace("git@github.com:", "https://github.com/", 1)
+        if not raw_url.endswith(".git"):
+            raw_url += ".git"
+        return repo_name, raw_url
 
-    return None
+    return None, None
 
 
 def _extract_acceptance_criteria(description_text: str) -> list[str]:
@@ -101,7 +110,8 @@ def normalize_issue(issue: dict[str, Any]) -> TaskPacket:
     description_raw = fields.get("description")
     description_text = _plain_description(description_raw)
 
-    repo = _extract_repo(description_text) or "unknown"
+    repo, repo_url = _extract_repo(description_text)
+    repo = repo or "unknown"
     acceptance_criteria = _extract_acceptance_criteria(description_text)
 
     priority_name: str | None = None
@@ -133,6 +143,10 @@ def normalize_issue(issue: dict[str, Any]) -> TaskPacket:
                 if name:
                     components.append(str(name))
 
+    metadata: dict[str, Any] = {}
+    if repo_url:
+        metadata["repo_url"] = repo_url
+
     return TaskPacket(
         task_id=f"task-{key.lower()}",
         source="jira",
@@ -148,4 +162,5 @@ def normalize_issue(issue: dict[str, Any]) -> TaskPacket:
         assignee=assignee,
         reporter=reporter,
         linked_services=components,
+        metadata=metadata,
     )

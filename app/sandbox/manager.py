@@ -27,6 +27,7 @@ class SandboxSession:
     work_branch: str
     repo_source: Path
     artifact_dir: Path
+    repo_url: str | None = None
 
 
 # keep old name as alias so existing code using SandboxHappyPathResult still works
@@ -54,6 +55,28 @@ class DockerSandboxManager:
         self._runs_dir = Path(runs_dir) if runs_dir is not None else Path.cwd() / "runs"
         self._image = image
 
+    def _check_docker_alive(self) -> None:
+        try:
+            self._docker_run(["docker", "info", "--format", "{{.ServerVersion}}"])
+        except subprocess.CalledProcessError as exc:
+            raise SandboxError(
+                "Docker daemon is not reachable. Start Docker Desktop (or `colima start`) and retry. "
+                f"Underlying error: {exc.stderr.strip() or exc.stdout.strip() or exc}"
+            ) from exc
+        except FileNotFoundError as exc:
+            raise SandboxError("`docker` CLI not found on PATH. Install Docker Desktop or colima.") from exc
+
+    def _check_image_available(self, image: str) -> None:
+        try:
+            self._docker_run(["docker", "image", "inspect", image])
+        except subprocess.CalledProcessError:
+            build_hint = ""
+            if "villager" in image:
+                build_hint = f" Build it with: docker build -t {image} docker/villager-base"
+            raise SandboxError(
+                f"Sandbox image '{image}' not found locally.{build_hint}"
+            )
+
     def start_sandbox(
         self,
         repo_source: str | Path,
@@ -61,12 +84,16 @@ class DockerSandboxManager:
         run_id: str,
         repo_url: str | None = None,
         github_pat: str | None = None,
+        install_cmd: str | None = None,
     ) -> SandboxSession:
         """Start a container and clone the repo. Container stays alive — caller must call teardown_sandbox.
 
         If repo_url is given, clones from the remote URL (using github_pat if provided).
         Otherwise mounts repo_source as a local volume and clones from /hostrepo.
         """
+        self._check_docker_alive()
+        self._check_image_available(self._image)
+
         repo_path = Path(repo_source).resolve()
 
         session = SandboxSession(
@@ -77,6 +104,7 @@ class DockerSandboxManager:
             work_branch=self._work_branch(jira_key),
             repo_source=repo_path,
             artifact_dir=self._runs_dir / run_id / "sandbox",
+            repo_url=repo_url,
         )
         session.artifact_dir.mkdir(parents=True, exist_ok=True)
 
@@ -125,11 +153,59 @@ class DockerSandboxManager:
                 session.container_name,
                 f"cd /workspace/repo && git checkout -b {shlex.quote(session.work_branch)}",
             )
+
+            if install_cmd:
+                self._docker_exec(
+                    session.container_name,
+                    f"cd /workspace/repo && {install_cmd}",
+                )
         except subprocess.CalledProcessError as exc:
             self._destroy_container(session.container_name)
             raise SandboxError(self._command_failure_message(exc)) from exc
 
         return session
+
+    def commit_and_push(
+        self,
+        session: SandboxSession,
+        commit_message: str,
+        github_pat: str | None = None,
+    ) -> None:
+        """Stage all changes, commit, and push the work branch to origin.
+
+        Configures a throwaway git identity inside the container so the commit
+        succeeds even in a fresh Docker image without any git config.
+        """
+        try:
+            self._docker_exec(
+                session.container_name,
+                "cd /workspace/repo && git config user.email 'villager@bot' && git config user.name 'Villager'",
+            )
+            self._docker_exec(
+                session.container_name,
+                f"cd /workspace/repo && git add -A && git commit -m {shlex.quote(commit_message)}",
+            )
+            # Git strips credentials from the stored remote URL for security,
+            # so we must re-inject the PAT explicitly before pushing.
+            if github_pat and session.repo_url and "github.com" in session.repo_url:
+                base_url = session.repo_url
+                if not base_url.endswith(".git"):
+                    base_url += ".git"
+                authed_url = base_url.replace("https://", f"https://{github_pat}@")
+                self._docker_exec(
+                    session.container_name,
+                    f"cd /workspace/repo && git remote set-url origin {shlex.quote(authed_url)}",
+                )
+            push_cmd = f"cd /workspace/repo && git push origin {shlex.quote(session.work_branch)}"
+            self._docker_exec(session.container_name, push_cmd)
+        except subprocess.CalledProcessError as exc:
+            msg = self._command_failure_message(exc)
+            if "403" in msg or "denied to" in msg:
+                raise SandboxError(
+                    f"git push was denied by GitHub (403). The PAT likely lacks `contents:write` on this repo. "
+                    f"Branch: {session.work_branch}. Original error: {msg}"
+                ) from exc
+            raise SandboxError(msg) from exc
 
     def teardown_sandbox(self, session: SandboxSession) -> None:
         """Copy artifacts out and destroy the container."""
@@ -155,7 +231,14 @@ class DockerSandboxManager:
         return session
 
     def _docker_exec(self, container_name: str, shell_command: str) -> None:
-        self._docker_run(["docker", "exec", container_name, "sh", "-lc", shell_command])
+        # Prepend common toolchain paths so language runtimes (Go, Node, etc.)
+        # are available even when the base image uses sh instead of bash.
+        patched = (
+            "export PATH=/usr/local/go/bin:/usr/local/bin:"
+            "/root/.cargo/bin:/root/.nvm/versions/node/*/bin:$PATH && "
+            + shell_command
+        )
+        self._docker_run(["docker", "exec", container_name, "sh", "-lc", patched])
 
     def _docker_run(self, command: list[str]) -> subprocess.CompletedProcess[str]:
         return self._runner.run(command)

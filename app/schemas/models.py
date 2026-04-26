@@ -23,6 +23,7 @@ RunState = Literal[
     "VALIDATING",
     "REVIEW_READY",
     "PR_DRAFTED",
+    "PR_SUBMITTED",
     "DONE",
     "FAILED_RETRYABLE",
     "FAILED_ESCALATE",
@@ -47,6 +48,7 @@ VALID_RUN_STATES = {
     "VALIDATING",
     "REVIEW_READY",
     "PR_DRAFTED",
+    "PR_SUBMITTED",
     "DONE",
     "FAILED_RETRYABLE",
     "FAILED_ESCALATE",
@@ -287,7 +289,24 @@ class RunRecord:
     validation_report_ref: str | None = None
     review_decision_ref: str | None = None
     artifact_bundle_ref: str | None = None
+    summary_ref: str | None = None
+    pr_ref: str | None = None
+    pr_url: str | None = None
     final_outcome: str | None = None
 
     def __post_init__(self) -> None:
         require_one_of("state", self.state, VALID_RUN_STATES)
+
+
+@dataclass(slots=True)
+class RunStateTransition:
+    run_id: str
+    from_state: RunState | None
+    to_state: RunState
+    occurred_at: datetime
+    reason: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.from_state is not None:
+            require_one_of("from_state", self.from_state, VALID_RUN_STATES)
+        require_one_of("to_state", self.to_state, VALID_RUN_STATES)

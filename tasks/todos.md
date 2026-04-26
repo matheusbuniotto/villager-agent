@@ -312,15 +312,28 @@ One-paragraph decision note in codebase or docs.
 
 ---
 
-## VIL-013 - Add Postgres state store
-**Status:** Backlog
+## VIL-013 - Add JSONL state store
+**Status:** Done
 **Priority:** P2
 **Milestone:** Milestone 5 - Persistence and external integration
 
+### Why
+For the MVP we need durable local state without bringing in a database service. JSONL keeps the store inspectable, append-friendly, and easy to evolve while the execution flow is still changing.
+
 ### Scope
-- persist run records
-- persist state transitions
-- persist validation refs and artifact refs
+- persist run records to JSONL
+- persist state transitions to JSONL
+- persist validation refs and artifact refs in stored run state
+- keep storage behind a small interface so a future DB-backed store can replace it
+
+### Deliverable
+A local JSONL-backed state store used by the run flow.
+
+### Done when
+- run records are written through the state store
+- state transitions are appended durably
+- validation and artifact references are persisted
+- stored records can be read back without guessing file shape
 
 ### Dependencies
 - VIL-001
@@ -329,7 +342,7 @@ One-paragraph decision note in codebase or docs.
 ---
 
 ## VIL-014 - Add real Git provider integration
-**Status:** Backlog
+**Status:** Done
 **Priority:** P2
 **Milestone:** Milestone 5 - Persistence and external integration
 
@@ -365,6 +378,45 @@ CLI that prints each phase with timestamps.
 
 ### Dependencies
 - VIL-005
+
+---
+
+---
+
+## VIL-017 — Rich live terminal feedback
+**Status:** Done
+**Priority:** P1
+**Milestone:** Milestone 6 — Developer experience
+
+### Why
+`villager run` currently prints flat timestamped lines. There is no way to tell
+what the agent is doing mid-execution, and phase results (spec, validation) are
+not surfaced inline — the user has to open JSON files to see them.
+
+### Scope
+- Add `rich` dependency
+- Spinner during blocking waits: sandbox start/clone, model load
+- Print spec summary inline after spec builder: problem statement, scope in/out, AC count
+- Print validation result table inline: each check with pass/fail/warning color
+- Stream agent tool-call activity to the terminal during executor runs
+- Print PR summary at the end: branch, URL, base branch
+
+### Deliverable
+`villager run` output that shows live progress, inline results, and a clean
+summary — no need to open run folder files to understand what happened.
+
+### Done when
+- Spinner visible during sandbox start and model load
+- Spec summary printed after spec build step
+- Validation table printed after each validation attempt
+- Agent activity streams to terminal during execution
+- PR summary printed on success
+- All existing tests still pass
+
+### Dependencies
+- VIL-015
+- VIL-011
+- VIL-014
 
 ---
 

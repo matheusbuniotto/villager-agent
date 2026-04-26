@@ -27,6 +27,12 @@ def _make_profile(**kwargs: Any) -> RepoProfile:
     return RepoProfile(**defaults)
 
 
+_PATH_PREFIX = (
+    "export PATH=/usr/local/go/bin:/usr/local/bin:"
+    "/root/.cargo/bin:/root/.nvm/versions/node/*/bin:$PATH && "
+)
+
+
 class FakeCommandRunner:
     def __init__(self, responses: dict[str, tuple[int, str, str]]) -> None:
         self.responses = responses
@@ -34,7 +40,13 @@ class FakeCommandRunner:
 
     def run(self, command: list[str]) -> subprocess.CompletedProcess[str]:
         self.commands.append(command)
-        key = " ".join(command)
+        # Normalise away the PATH prefix injected by _docker_exec so test
+        # fixture keys don't need to include it.
+        normalised = [
+            part.replace(_PATH_PREFIX, "", 1) if _PATH_PREFIX in part else part
+            for part in command
+        ]
+        key = " ".join(normalised)
         exit_code, stdout, stderr = self.responses.get(key, (0, "", ""))
         if exit_code != 0:
             exc = subprocess.CalledProcessError(exit_code, command, output=stdout, stderr=stderr)

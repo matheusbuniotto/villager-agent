@@ -1,6 +1,6 @@
 repo_name: goAgent
 repo_url: https://github.com/matheusbuniotto/goAgent
-sandbox_image: golang:1.23-bookworm
+sandbox_image: villager-base:latest
 team_name: platform
 language: go
 build_system: go

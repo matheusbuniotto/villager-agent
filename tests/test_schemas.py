@@ -6,9 +6,11 @@ import pytest
 from app.schemas import (
     ArtifactBundle,
     ExecutionSpec,
+    Priority,
     RepoProfile,
     ReviewDecision,
     RunRecord,
+    RunStateTransition,
     TaskPacket,
     ValidationCheck,
     ValidationReport,
@@ -137,12 +139,22 @@ def test_review_artifact_and_run_record_instantiates() -> None:
         validation_report_ref="validation-001",
         review_decision_ref="decision-001",
         artifact_bundle_ref="artifact-001",
+        summary_ref="runs/run-001/summary.md",
+        pr_ref="runs/run-001/pr.md",
         final_outcome="accepted",
+    )
+    transition = RunStateTransition(
+        run_id="run-001",
+        from_state="PR_DRAFTED",
+        to_state="DONE",
+        occurred_at=datetime(2026, 4, 24, 10, 5, 0),
+        reason="finalized artifacts",
     )
 
     assert decision.next_action == "Generate draft PR"
     assert artifact.changed_files == ["app/api.py"]
     assert run.state == "DONE"
+    assert transition.to_state == "DONE"
 
 
 def test_invalid_priority_raises_clear_error() -> None:
@@ -155,6 +167,6 @@ def test_invalid_priority_raises_clear_error() -> None:
             description="Example",
             repo="billing-service",
             requested_outcome="Do something",
-            priority=cast(object, "urgent"),
+            priority=cast(Priority, "urgent"),
             risk_level="low",
         )

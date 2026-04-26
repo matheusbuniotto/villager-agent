@@ -25,7 +25,12 @@ class Validator:
     def _docker_exec(
         self, container_name: str, shell_command: str
     ) -> subprocess.CompletedProcess[str]:
-        return self._runner.run(["docker", "exec", container_name, "sh", "-lc", shell_command])
+        patched = (
+            "export PATH=/usr/local/go/bin:/usr/local/bin:"
+            "/root/.cargo/bin:/root/.nvm/versions/node/*/bin:$PATH && "
+            + shell_command
+        )
+        return self._runner.run(["docker", "exec", container_name, "sh", "-lc", patched])
 
     def _list_repo_files(self, container_name: str) -> list[str]:
         """List all files under /workspace/repo in the container."""

@@ -55,10 +55,11 @@ def test_happy_path_builds_result_and_runs_docker_commands(tmp_path: Path) -> No
     assert result.repo_source == repo
     assert result.artifact_dir.exists()
 
-    # Should issue: docker run, exec (git install), exec (clone), exec (checkout),
-    # exec (artifact), docker cp, docker rm -f
-    assert len(runner.commands) == 7
-    assert runner.commands[0][0:2] == ["docker", "run"]
+    # Should issue: docker info, docker image inspect, docker run, exec (git install),
+    # exec (clone), exec (checkout), exec (artifact), docker cp, docker rm -f
+    assert len(runner.commands) == 9
+    assert runner.commands[0][0:2] == ["docker", "info"]
+    assert runner.commands[2][0:2] == ["docker", "run"]
     assert runner.commands[-2][0:2] == ["docker", "cp"]
     assert runner.commands[-1] == ["docker", "rm", "-f", "villager-run-abc"]
 
@@ -98,7 +99,7 @@ def test_container_destroyed_even_on_failure(tmp_path: Path) -> None:
     def counting_run(command: list[str]) -> subprocess.CompletedProcess[str]:
         nonlocal call_count
         call_count += 1
-        if call_count == 3:  # fail on the third command (clone exec)
+        if call_count == 5:  # fail on the fifth command (clone exec, after docker info/image inspect/run/git-install)
             raise subprocess.CalledProcessError(
                 returncode=1,
                 cmd=command,
@@ -145,6 +146,98 @@ def test_summary_artifact_command_writes_json(tmp_path: Path) -> None:
 
     # Verify the artifact directory was created locally
     assert result.artifact_dir.exists()
+
+
+# --- Preflight checks ---
+
+def test_docker_down_raises_clear_error(tmp_path: Path) -> None:
+    repo = _make_git_repo(tmp_path)
+
+    class DockerDownRunner:
+        def run(self, command: list[str]) -> subprocess.CompletedProcess[str]:
+            if command[:2] == ["docker", "info"]:
+                raise subprocess.CalledProcessError(
+                    returncode=1, cmd=command, stderr="Cannot connect to the Docker daemon"
+                )
+            return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+    mgr = DockerSandboxManager(runner=DockerDownRunner(), runs_dir=tmp_path / "runs")
+    with pytest.raises(SandboxError, match="Docker daemon is not reachable"):
+        mgr.start_sandbox(repo, jira_key="VIL-001", run_id="run-1")
+
+
+def test_docker_cli_not_found_raises_clear_error(tmp_path: Path) -> None:
+    repo = _make_git_repo(tmp_path)
+
+    class NoCLIRunner:
+        def run(self, command: list[str]) -> subprocess.CompletedProcess[str]:
+            if command[:2] == ["docker", "info"]:
+                raise FileNotFoundError("docker not on PATH")
+            return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+    mgr = DockerSandboxManager(runner=NoCLIRunner(), runs_dir=tmp_path / "runs")
+    with pytest.raises(SandboxError, match="docker.*CLI not found"):
+        mgr.start_sandbox(repo, jira_key="VIL-001", run_id="run-1")
+
+
+def test_missing_image_raises_clear_error(tmp_path: Path) -> None:
+    repo = _make_git_repo(tmp_path)
+
+    class ImageMissingRunner:
+        def run(self, command: list[str]) -> subprocess.CompletedProcess[str]:
+            if command[:3] == ["docker", "image", "inspect"]:
+                raise subprocess.CalledProcessError(
+                    returncode=1, cmd=command, stderr="No such image"
+                )
+            return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+    mgr = DockerSandboxManager(runner=ImageMissingRunner(), runs_dir=tmp_path / "runs")
+    with pytest.raises(SandboxError, match="not found locally"):
+        mgr.start_sandbox(repo, jira_key="VIL-001", run_id="run-1")
+
+
+def test_missing_villager_image_includes_build_hint(tmp_path: Path) -> None:
+    repo = _make_git_repo(tmp_path)
+
+    class ImageMissingRunner:
+        def run(self, command: list[str]) -> subprocess.CompletedProcess[str]:
+            if command[:3] == ["docker", "image", "inspect"]:
+                raise subprocess.CalledProcessError(
+                    returncode=1, cmd=command, stderr="No such image"
+                )
+            return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+    mgr = DockerSandboxManager(runner=ImageMissingRunner(), image="villager-base:latest", runs_dir=tmp_path / "runs")
+    with pytest.raises(SandboxError, match="docker build"):
+        mgr.start_sandbox(repo, jira_key="VIL-001", run_id="run-1")
+
+
+def test_push_403_raises_friendly_error(tmp_path: Path) -> None:
+    session = SandboxSession(
+        run_id="run-1",
+        jira_key="VIL-001",
+        image="python:3.12-bookworm",
+        container_name="villager-run-1",
+        work_branch="villager/vil-001",
+        repo_source=tmp_path,
+        artifact_dir=tmp_path,
+        repo_url="https://github.com/acme/repo",
+    )
+
+    class Push403Runner:
+        def run(self, command: list[str]) -> subprocess.CompletedProcess[str]:
+            cmd_str = " ".join(command)
+            if "git push" in cmd_str:
+                raise subprocess.CalledProcessError(
+                    returncode=1,
+                    cmd=command,
+                    stderr="remote: Permission to acme/repo.git denied to bot. The requested URL returned error: 403",
+                )
+            return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+    mgr = DockerSandboxManager(runner=Push403Runner(), runs_dir=tmp_path / "runs")
+    with pytest.raises(SandboxError, match="403.*contents:write"):
+        mgr.commit_and_push(session, "VIL-001: fix something", github_pat="fake-token")
 
 
 # --- Lifecycle tests (require Docker) ---

@@ -133,6 +133,19 @@ class TestNormalizer:
         packet = normalize_issue(issue)
         assert packet.repo == "payments"
 
+    def test_github_url_stored_in_metadata(self) -> None:
+        issue = {
+            "key": "VIL-006",
+            "fields": {
+                "summary": "Test",
+                "description": "Repo: https://github.com/acme/billing-service for this task.",
+            },
+        }
+
+        packet = normalize_issue(issue)
+        assert packet.metadata.get("repo_url") == "https://github.com/acme/billing-service.git"
+        assert packet.repo == "billing-service"
+
     def test_extract_repo_from_jira_smart_link(self) -> None:
         issue = {
             "key": "VIL-006",

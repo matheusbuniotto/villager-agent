@@ -36,6 +36,12 @@ class ArtifactWriter:
         path.write_text(content + "\n", encoding="utf-8")
         return path
 
+    def write_metrics(self, data: dict[str, object]) -> Path:
+        """Write metrics.json to the run folder."""
+        path = self._run_dir / "metrics.json"
+        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        return path
+
     def write_summary_md(
         self,
         run_record: RunRecord,
